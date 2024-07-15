@@ -27,7 +27,8 @@ contract ClaimSystem is AccessControl, Ownable {
 
     mapping(bytes => bool) public _isSignedClaim;
     mapping(address => UserInfor) public userInfor;
-    mapping(uint256 => mapping(address => mapping(uint256 => bool))) public epochClaimed;
+    mapping(uint256 => mapping(address => mapping(uint256 => bool)))
+        public epochClaimed;
 
     constructor(IERC20 _tokenBase) {
         _setRoleAdmin(MANAGEMENT_ROLE, MANAGEMENT_ROLE);
@@ -41,16 +42,30 @@ contract ClaimSystem is AccessControl, Ownable {
      * @dev Change validator address
      * @param _validatorAddress  new validator address
      */
-    function changeValidator(address _validatorAddress) external onlyRole(MANAGEMENT_ROLE) {
+    function changeValidator(
+        address _validatorAddress
+    ) external onlyRole(MANAGEMENT_ROLE) {
         // verify new exchange value
         validator = _validatorAddress;
         emit ChangeValidatorAddress(_validatorAddress);
     }
 
+    /**
+     * @dev Change Session
+     * @param _sessionId  New Session ID
+     */
     function setSession(uint256 _sessionId) external onlyRole(MANAGEMENT_ROLE) {
         sessionId = _sessionId;
     }
 
+    /**
+     * @dev Claim token
+     * @notice Addresses in the whitelist can claim rewards when the SALD price reaches the target
+     * @param epochs Epochs of the SALD marketcap
+     * @param _amount Amount of reward that can be claimed
+     * @param deadline Deadline of the signature
+     * @param sig Signature by admin
+     */
     function claimToken(
         uint256[] memory _epochs,
         uint256 _amount,
@@ -92,6 +107,16 @@ contract ClaimSystem is AccessControl, Ownable {
         emit ClaimToken(_msgSender(), _amount, address(tokenBase), sig);
     }
 
+    /**
+     * @dev Decode data claim
+     * @notice Decode data claim by admin. Then recover by admin
+     * @param epochs Epochs of the SALD marketcap
+     * @param chainId ChainId of the blockchain network - Ethereum
+     * @param receiver Address to claim
+     * @param amount Amount of reward to claim
+     * @param deadline Deadline of the signature
+     * @param sig Signature by admin
+     */
     function recoverClaim(
         uint256[] memory epochs,
         uint256 chainId,
@@ -109,6 +134,14 @@ contract ClaimSystem is AccessControl, Ownable {
             );
     }
 
+    /**
+     * @dev Encode data claim
+     * @notice Encode data claim by admin. Then sign the message by admin
+     * @param epochs Epochs of the SALD marketcap
+     * @param chainId ChainId of the blockchain network - Ethereum
+     * @param receiver Address to claim
+     * @param deadline Deadline of the signature
+     */
     function encodeClaim(
         uint256[] memory epochs,
         uint256 chainId,
